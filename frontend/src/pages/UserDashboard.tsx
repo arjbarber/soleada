@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { mockPosts, mockChats } from '../data/mockData';
 import type { UserType, Post, Chat } from '../data/mockData';
 import PostCard from '../components/PostCard';
+import { useAuth } from '../AuthContext';
 
 interface UserDashboardProps {
   userType: UserType;
@@ -10,6 +12,8 @@ interface UserDashboardProps {
 }
 
 const UserDashboard: React.FC<UserDashboardProps> = ({ userType, theme, setTheme }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -39,6 +43,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userType, theme, setTheme
     // In a real app this would send to a backend
     setMessageInput('');
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  // Display name from the backend user, or fallback
+  const displayName = user?.username || 'User';
+  const accountTypeLabel = userType === 'kids' ? 'Kid' : userType === 'founder' ? 'Founder' : 'Teen / Adult';
 
   return (
     <div className="dashboard-container">
@@ -178,22 +191,34 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userType, theme, setTheme
                 <h3>Your Profile</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', marginTop: '1.5rem' }}>
                   <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--nika-gradient)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '2rem', fontWeight: 'bold' }}>
-                    {userType.charAt(0).toUpperCase()}
+                    {displayName.charAt(0).toUpperCase()}
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <h4 style={{ textTransform: 'capitalize' }}>{userType} Account</h4>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>Manage your profile information.</p>
+                    <h4 style={{ textTransform: 'capitalize' }}>{displayName}</h4>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{accountTypeLabel} Account</p>
                   </div>
                   
                   <div className="input-group" style={{ width: '100%', marginTop: '0.5rem' }}>
                     <label>Display Name</label>
-                    <input type="text" className="auth-input" defaultValue="User" />
+                    <input type="text" className="auth-input" defaultValue={displayName} />
                   </div>
                   <div className="input-group" style={{ width: '100%' }}>
                     <label>Bio</label>
                     <textarea className="auth-input" rows={3} placeholder="Tell us about yourself..." style={{ resize: 'vertical' }}></textarea>
                   </div>
                   <button className="btn-primary" style={{ width: '100%' }}>Update Profile</button>
+                  <button 
+                    className="btn-primary" 
+                    style={{ 
+                      width: '100%', 
+                      background: 'rgba(239, 68, 68, 0.1)', 
+                      color: '#ef4444',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                    }}
+                    onClick={handleLogout}
+                  >
+                    Log Out
+                  </button>
                 </div>
               </div>
             )}
@@ -229,6 +254,11 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ userType, theme, setTheme
       <div className={`posts-main ${userType === 'kids' ? 'full-width' : ''}`}>
         <div className="posts-header">
           <h2>Your Feed</h2>
+          {user && (
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Signed in as <strong>{user.username}</strong>
+            </span>
+          )}
         </div>
         
         <div className="posts-feed">
