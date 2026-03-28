@@ -99,14 +99,26 @@ export interface ChatMessage {
 
 export interface Chat {
   id: string;
-  title: string;
+  contactName: string;
+  avatarInitial: string;
+  avatarColor: string;
+  online: boolean;
+  lastMessagePreview: string;
+  lastMessageTime: string;
+  unreadCount: number;
   messages: ChatMessage[];
 }
 
 export const mockChats: Chat[] = [
   {
     id: 'c1',
-    title: 'chats doxxing',
+    contactName: 'Maya Rodriguez',
+    avatarInitial: 'M',
+    avatarColor: '#FF6B35',
+    online: true,
+    lastMessagePreview: 'We need to make sure our privacy policies are air-tight.',
+    lastMessageTime: '10:06 AM',
+    unreadCount: 1,
     messages: [
       { id: 'm1', sender: 'other', text: 'Hey, did you see the latest news about the doxxing case?', timestamp: '10:00 AM' },
       { id: 'm2', sender: 'user', text: 'Yeah, it\'s pretty scary stuff.', timestamp: '10:05 AM' },
@@ -115,11 +127,66 @@ export const mockChats: Chat[] = [
   },
   {
     id: 'c2',
-    title: 'business transfer',
+    contactName: 'Jordan Chen',
+    avatarInitial: 'J',
+    avatarColor: '#6366F1',
+    online: true,
+    lastMessagePreview: 'Let me know if you need anything else.',
+    lastMessageTime: 'Yesterday',
+    unreadCount: 0,
     messages: [
       { id: 'm4', sender: 'other', text: 'The paperwork for the business transfer is ready.', timestamp: 'Yesterday' },
       { id: 'm5', sender: 'user', text: 'Excellent. I will review it tonight.', timestamp: 'Yesterday' },
       { id: 'm6', sender: 'other', text: 'Let me know if you need anything else.', timestamp: 'Yesterday' },
+    ]
+  },
+  {
+    id: 'c3',
+    contactName: 'Aisha Patel',
+    avatarInitial: 'A',
+    avatarColor: '#10B981',
+    online: false,
+    lastMessagePreview: 'The pitch deck looks great! Let\'s schedule a call.',
+    lastMessageTime: 'Mon',
+    unreadCount: 3,
+    messages: [
+      { id: 'm7', sender: 'other', text: 'Hey! I reviewed the pitch deck you sent over.', timestamp: 'Mon 9:00 AM' },
+      { id: 'm8', sender: 'user', text: 'Thanks for taking the time! Any feedback?', timestamp: 'Mon 9:15 AM' },
+      { id: 'm9', sender: 'other', text: 'It\'s solid. The market analysis section is really compelling.', timestamp: 'Mon 9:20 AM' },
+      { id: 'm10', sender: 'other', text: 'I think we could tighten up the financials slide though.', timestamp: 'Mon 9:22 AM' },
+      { id: 'm11', sender: 'other', text: 'The pitch deck looks great! Let\'s schedule a call.', timestamp: 'Mon 9:30 AM' },
+    ]
+  },
+  {
+    id: 'c4',
+    contactName: 'Liam Nakamura',
+    avatarInitial: 'L',
+    avatarColor: '#F59E0B',
+    online: false,
+    lastMessagePreview: 'Sounds good, talk soon!',
+    lastMessageTime: 'Last week',
+    unreadCount: 0,
+    messages: [
+      { id: 'm12', sender: 'user', text: 'Hey Liam, are you still interested in the co-founder role?', timestamp: 'Last week' },
+      { id: 'm13', sender: 'other', text: 'Absolutely! I\'ve been thinking about it a lot.', timestamp: 'Last week' },
+      { id: 'm14', sender: 'user', text: 'Great, let\'s set up a meeting this week.', timestamp: 'Last week' },
+      { id: 'm15', sender: 'other', text: 'Sounds good, talk soon!', timestamp: 'Last week' },
+    ]
+  },
+  {
+    id: 'c5',
+    contactName: 'Sofia Martinez',
+    avatarInitial: 'S',
+    avatarColor: '#EC4899',
+    online: true,
+    lastMessagePreview: 'I\'ll send over the contract by end of day.',
+    lastMessageTime: '2:30 PM',
+    unreadCount: 0,
+    messages: [
+      { id: 'm16', sender: 'other', text: 'Hi! Following up on our partnership discussion.', timestamp: '2:00 PM' },
+      { id: 'm17', sender: 'user', text: 'Yes! We\'re very excited about the collaboration.', timestamp: '2:10 PM' },
+      { id: 'm18', sender: 'other', text: 'Same here. Our team has already started on the integration plan.', timestamp: '2:20 PM' },
+      { id: 'm19', sender: 'other', text: 'I\'ll send over the contract by end of day.', timestamp: '2:30 PM' },
     ]
   }
 ];
