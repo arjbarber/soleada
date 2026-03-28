@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 import type { UserType } from '../data/mockData';
 
 interface LoginProps {
   onLogin: (type: UserType) => void;
-  onNavigateRegister: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [accountType, setAccountType] = useState<UserType>('adults');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,15 +15,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login
     if (email && password) {
       onLogin(accountType);
+      navigate('/dashboard');
     }
   };
 
   return (
     <div className="auth-container">
-      {/* Background gradients similar to App.tsx but positioned for auth */}
+      {/* Background gradients */}
       <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(255, 107, 53, 0.2) 0%, transparent 60%)', filter: 'blur(40px)', zIndex: 0 }} />
       <div style={{ position: 'absolute', bottom: '-15%', left: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(247, 197, 68, 0.15) 0%, transparent 60%)', filter: 'blur(50px)', zIndex: 0 }} />
 
@@ -38,7 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
 
         <div className="auth-header">
           <h1 className="gradient-text">Welcome Back</h1>
-          <p>Login to your Nika Network account</p>
+          <p>Login to your Soleada account</p>
         </div>
 
         <form className="auth-form delay-1" onSubmit={handleSubmit}>
@@ -114,7 +114,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
 
         <div className="auth-footer delay-2">
           <span>Don't have an account?</span>
-          <button type="button" className="auth-link" onClick={onNavigateRegister}>
+          <button type="button" className="auth-link" onClick={() => navigate('/register')}>
             Create one
           </button>
         </div>

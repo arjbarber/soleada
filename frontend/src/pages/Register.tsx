@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-
+import { useNavigate } from 'react-router-dom';
 import type { UserType } from '../data/mockData';
 
 interface RegisterProps {
   onRegister: (type: UserType) => void;
-  onNavigateLogin: () => void;
 }
 
-const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateLogin }) => {
+const Register: React.FC<RegisterProps> = ({ onRegister }) => {
+  const navigate = useNavigate();
   const [accountType, setAccountType] = useState<UserType>('adults');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +17,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateLogin }) => {
     e.preventDefault();
     if (email && password && username) {
       onRegister(accountType);
+      navigate('/dashboard');
     }
   };
 
@@ -28,7 +29,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateLogin }) => {
       <div className="auth-card animate-in">
         <div className="auth-header">
           <h1 className="gradient-text">Create Account</h1>
-          <p>Join the Nika Network today</p>
+          <p>Join the Soleada community today</p>
         </div>
 
         <form className="auth-form delay-1" onSubmit={handleSubmit}>
@@ -117,7 +118,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateLogin }) => {
 
         <div className="auth-footer delay-2">
           <span>Already have an account?</span>
-          <button type="button" className="auth-link" onClick={onNavigateLogin}>
+          <button type="button" className="auth-link" onClick={() => navigate('/login')}>
             Log in
           </button>
         </div>

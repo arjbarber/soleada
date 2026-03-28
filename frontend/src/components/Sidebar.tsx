@@ -1,6 +1,6 @@
 import React from 'react';
 
-// SVG Icons (mocking feather icons for dependencies-free setup)
+// SVG Icons
 const SunIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="5"></circle>
@@ -67,37 +67,37 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, children }) 
         <div className="logo-icon">
           <SunIcon />
         </div>
-        <span className="logo-text">Nika Network</span>
+        <span className="logo-text">Soleada</span>
       </div>
 
       <nav className="nav-menu">
-        <a 
+        <button
           className={`nav-item ${activeTab === 'lifestory' ? 'active' : ''}`}
           onClick={() => setActiveTab('lifestory')}
         >
           <UsersIcon /> LifeStory Pools
-        </a>
-        <a 
+        </button>
+        <button
           className={`nav-item ${activeTab === 'founder' ? 'active' : ''}`}
           onClick={() => setActiveTab('founder')}
         >
           <BriefcaseIcon /> Founder Match
-        </a>
-        <a 
+        </button>
+        <button
           className={`nav-item ${activeTab === 'corporate' ? 'active' : ''}`}
           onClick={() => setActiveTab('corporate')}
         >
           <BuildingIcon /> Corporate Conversations
-        </a>
+        </button>
         
         <div className="nav-divider"></div>
         
-        <a 
+        <button
           className={`nav-item ${activeTab === 'supporter' ? 'active' : ''}`}
           onClick={() => setActiveTab('supporter')}
         >
           <HomeIcon /> Business Supporter
-        </a>
+        </button>
       </nav>
 
       {/* Render the translator widget passed as children */}
