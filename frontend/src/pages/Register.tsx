@@ -1,23 +1,36 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signupUser } from '../api';
+import { useAuth, userTypeToBackendType } from '../AuthContext';
 import type { UserType } from '../data/mockData';
 
-interface RegisterProps {
-  onRegister: (type: UserType) => void;
-}
-
-const Register: React.FC<RegisterProps> = ({ onRegister }) => {
+const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [accountType, setAccountType] = useState<UserType>('adults');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password && username) {
-      onRegister(accountType);
+    if (!username || !password) return;
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const backendType = userTypeToBackendType(accountType);
+      const newUser = await signupUser(username, password, backendType);
+      // The signup endpoint returns the user object directly
+      setUser(newUser);
       navigate('/dashboard');
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError('Could not create account. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,19 +99,6 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="email">Email Address</label>
-            <input 
-              type="email" 
-              id="email" 
-              className="auth-input" 
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="input-group">
             <label htmlFor="password">Password</label>
             <input 
               type="password" 
@@ -111,8 +111,26 @@ const Register: React.FC<RegisterProps> = ({ onRegister }) => {
             />
           </div>
 
-          <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem', width: '100%' }}>
-            Sign Up
+          {error && (
+            <div className="auth-error" style={{
+              color: '#ef4444',
+              fontSize: '0.875rem',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '8px',
+              textAlign: 'center',
+            }}>
+              {error}
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            style={{ marginTop: '0.5rem', width: '100%' }}
+            disabled={loading}
+          >
+            {loading ? 'Creating account…' : 'Sign Up'}
           </button>
         </form>
 

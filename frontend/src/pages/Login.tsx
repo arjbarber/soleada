@@ -1,23 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../api';
+import { useAuth, backendTypeToUserType } from '../AuthContext';
 import type { UserType } from '../data/mockData';
 
-interface LoginProps {
-  onLogin: (type: UserType) => void;
-}
-
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [accountType, setAccountType] = useState<UserType>('adults');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [language, setLanguage] = useState<'ES' | 'EN'>('EN');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      onLogin(accountType);
-      navigate('/dashboard');
+    if (!username || !password) return;
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const data = await loginUser(username, password);
+      if (data.success && data.result && data.result.length > 0) {
+        setUser(data.result[0]);
+        navigate('/dashboard');
+      } else {
+        setError('Invalid username or password.');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Could not connect to server. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,14 +98,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="username">Username</label>
             <input 
-              type="email" 
-              id="email" 
+              type="text" 
+              id="username" 
               className="auth-input" 
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
@@ -107,8 +123,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             />
           </div>
 
-          <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem', width: '100%' }}>
-            Log In
+          {error && (
+            <div className="auth-error" style={{
+              color: '#ef4444',
+              fontSize: '0.875rem',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: '8px',
+              textAlign: 'center',
+            }}>
+              {error}
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            style={{ marginTop: '0.5rem', width: '100%' }}
+            disabled={loading}
+          >
+            {loading ? 'Logging in…' : 'Log In'}
           </button>
         </form>
 
