@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
+import Kids from './pages/Kids';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -34,7 +35,7 @@ const App: React.FC = () => {
         path="/register"
         element={<Register onRegister={(type) => setUserType(type)} />}
       />
-
+      <Route path="/kids" element={<Kids />} />
       {/* Dashboard */}
       <Route
         path="/dashboard"
