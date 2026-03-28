@@ -25,7 +25,8 @@ const postSchema = new mongoose.Schema({
     type: Number,
     body: String,
     embeddings: [Number],
-    authorId: String
+    authorId: String,
+    genre: [String]
 })
 
 const chatSchema = new mongoose.Schema({
@@ -88,16 +89,15 @@ app.get("/signup/:username/:pass/:type", (req, res) => {
 app.get("/postByAuthorId/:id", (req, res) => {
     let id = req.params.id;
     Posts.find({authorId: id}).then((results) => {
-        return res.json([]);
+        return res.json(results);
     })
 });
 
 app.get("/postByName/:search/:uType", (req, res) => {
     let searchTerm = req.params.search; //req.body.search;
-    searchTerm = searchTerm.toLowerCase();
     let searchDomain = req.params.uType; //req.body.userType;
 
-    Posts.find({name: searchTerm, type: searchDomain}).then((results) => {
+    Posts.find({title: searchTerm}).then((results) => {
         if(results){
             return res.json(results);
         }else{
@@ -112,6 +112,7 @@ app.get("/newPost/:name/:body/:authorId/:type", (req, res) => {
     let name = req.params.name;
     let body = req.params.body;
     let authorId = req.params.authorId;
+    console.log(authorId);
     let type = req.params.type;
 
     const newPost = new Posts({
