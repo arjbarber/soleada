@@ -68,7 +68,6 @@ app.get("/login/:username/:pass", async (req, res) => {
     })
 });
 
-
 app.get("/signup/:username/:pass/:type", (req, res) => {
     let usernameGiven = req.params.username;//req.body.username;
     let passwordGiven = req.params.pass;//req.body.password;
@@ -128,18 +127,34 @@ app.get("/newPost/:name/:body/:authorId/:type", (req, res) => {
     })
 });
 
-// create chat
+// get chats
+
+app.get("/createChat/:user1/:user2", (req, res) => {
+    let user1 = req.params.user1;
+    let user2 = req.params.user2;
+
+    let chat = new Chat({
+        userOne: user1,
+        userTwo: user2,
+        messages: []
+    });
+
+    chat.save().then(() => {
+        return res.json(chat);
+    });
+
+})
 
 app.get("/getChats/:user", (req, res) => {
     let userId = req.params.user;
 
     Chat.find({userOne: userId}).then((resultsOne) => {
         if(resultsOne.length > 0){
-            return res.json(resultsOne);
+            return res.json(resultsOne[0]);
         }else{
             Chat.find({userTwo: userId}).then((resultsTwo) => {
                 if(resultsTwo.length > 0){
-                    return res.json(resultsTwo);
+                    return res.json(resultsTwo[0]);
                 }else{
                     return res.json([]);
                 }
@@ -148,64 +163,66 @@ app.get("/getChats/:user", (req, res) => {
     });
 });
 
-app.get("/getChat/:user/:user2", (req, res) => {
+app.get("/getChat/:user/:userTwo", (req, res) => {
     let user1 = req.params.user;
-    let user2 = req.params.user2;
+    let user2 = req.params.userTwo;
 
     Chat.find({userOne: user1, userTwo: user2}).then((resultsOne) => {
-        Chat.find({userOne: user2, userTwo: user1}).then((resultsTwo) => {
-            if(resultsOne && resultsTwo.length > 0){
-                // is in res 1
-                return resultsOne;
-            }else if(resultsTwo && resultsTwo.length > 0){
-                return resultsTwo;
+        if(resultsOne && resultsOne.length > 0){
+            return res.json(resultsOne[0]);
+        }else{
+            Chat.find({userOne: user2, userTwo: user1}).then((resultsTwo) => {
+                    if(resultsTwo && resultsTwo.length > 0){
+                        return res.json(resultsTwo[0]);
+                    }
+                })
             }
-        })
     })
 })
 
 app.get("/chatHistory/:id", (req, res) => {
     let chatId = req.params.id;
     Chat.find({_id: chatId}).then((result) => {
-        if(results.length > 0){
-            return results[0];
+        if(result.length > 0){
+            return res.json(result[0].messages);
         }else{
-            return [];
+            return res.json([]);
         }
     })
 })
 
-app.get("/sendMessage/:id/:userID/:newMessage/:lang", (req, res) => {
+app.get("/sendMessage/:id/:userID/:userTwo/:newMessage/:lang", (req, res) => {
     let chatID = req.params.id;
     let newMessage = req.params.newMessage;
     let lang = req.params.lang;
     let userId = req.params.userID;
+    let userIdTo = req.params.userTwo;
 
     const chat = Chat.findById(chatID);
 
     if(!chat){
-        return [];
+        res.return([]);
     }
 
     Chat.find({_id: chatID}).then((results) => {
         if(results && results.length > 0){
             if(lang == 0){
-                chat.messages.push({
+                results[0].messages.push({
                     user: userId,
                     contentEnglish: newMessage,
                     contentSpanish: ""
                 });
-                chat.save(() => {
-                    return chat;
+                results[0].save().then(() => {
+                    return res.json(results);
                 })
             }else{
-                chat.messages.push({
+                results[0].messages.push({
                     user: userId,
                     contentEnglish: "",
                     contentSpanish: newMessage
                 });
-                chat.save(() => {
-                    return chat;
+                results[0].save().then(() => {
+                    return res.json(results);
                 })
             }
         }else{
