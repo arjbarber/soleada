@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 
+import type { UserType } from '../data/mockData';
+
 interface RegisterProps {
-  onRegister: () => void;
+  onRegister: (type: UserType) => void;
   onNavigateLogin: () => void;
 }
 
-type AccountType = 'kids' | 'adults' | 'founder';
-
 const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateLogin }) => {
-  const [accountType, setAccountType] = useState<AccountType>('adults');
+  const [accountType, setAccountType] = useState<UserType>('adults');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -16,7 +16,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onNavigateLogin }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password && username) {
-      onRegister();
+      onRegister(accountType);
     }
   };
 

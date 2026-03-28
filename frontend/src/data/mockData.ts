@@ -1,4 +1,5 @@
 export type PostCategory = 'lifestory' | 'founder' | 'corporate';
+export type UserType = 'kids' | 'adults' | 'founder';
 
 export interface Post {
   id: string;
@@ -88,3 +89,37 @@ export const mockTranslations: Record<string, string> = {
   "this is bad": "We should review this to find areas for improvement.",
   "thx": "Thank you for your assistance.",
 };
+
+export interface ChatMessage {
+  id: string;
+  sender: 'user' | 'other';
+  text: string;
+  timestamp: string;
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+}
+
+export const mockChats: Chat[] = [
+  {
+    id: 'c1',
+    title: 'chats doxxing',
+    messages: [
+      { id: 'm1', sender: 'other', text: 'Hey, did you see the latest news about the doxxing case?', timestamp: '10:00 AM' },
+      { id: 'm2', sender: 'user', text: 'Yeah, it\'s pretty scary stuff.', timestamp: '10:05 AM' },
+      { id: 'm3', sender: 'other', text: 'We need to make sure our privacy policies are air-tight.', timestamp: '10:06 AM' },
+    ]
+  },
+  {
+    id: 'c2',
+    title: 'business transfer',
+    messages: [
+      { id: 'm4', sender: 'other', text: 'The paperwork for the business transfer is ready.', timestamp: 'Yesterday' },
+      { id: 'm5', sender: 'user', text: 'Excellent. I will review it tonight.', timestamp: 'Yesterday' },
+      { id: 'm6', sender: 'other', text: 'Let me know if you need anything else.', timestamp: 'Yesterday' },
+    ]
+  }
+];
