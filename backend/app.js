@@ -6,7 +6,6 @@ const uri = process.env.MONGO_URL;
 const bodyParser = require("body-parser");
 const express = require("express");
 
-
 const app = express();
 app.use(express.json());
 
@@ -26,7 +25,8 @@ const postSchema = new mongoose.Schema({
     type: Number,
     body: String,
     embeddings: [Number],
-    authorId: String
+    authorId: String,
+    genre: [String]
 })
 
 const chatSchema = new mongoose.Schema({
@@ -47,6 +47,8 @@ const Posts = new mongoose.model("Posts", postSchema);
 const Users = new mongoose.model("Users", userSchema);
 const Chat = new mongoose.model("Chats", chatSchema);
 
+// login + signup
+
 app.get("/login/:username/:pass", async (req, res) => {
     
     let usernameGiven = req.params.username;
@@ -59,7 +61,7 @@ app.get("/login/:username/:pass", async (req, res) => {
     Users.find({username: usernameGiven, password: passwordGiven}).then((result) => {
         if(result && result.length > 0){
             console.log(result);
-            return res.json({success: true, result: result})
+            return res.json({success: true, result: result[0]})
         }else{
             return res.json({success: false, result: null});
         }
@@ -77,11 +79,140 @@ app.get("/signup/:username/:pass/:type", (req, res) => {
         password: passwordGiven, 
         type: userType
     });
-
     newUser.save().then(() => {
         return res.json(newUser);
     });
 })
 
+// Getting Posts
+
+app.get("/postByAuthorId/:id", (req, res) => {
+    let id = req.params.id;
+    Posts.find({authorId: id}).then((results) => {
+        return res.json(results);
+    })
+});
+
+app.get("/postByName/:search/:uType", (req, res) => {
+    let searchTerm = req.params.search; //req.body.search;
+    let searchDomain = req.params.uType; //req.body.userType;
+
+    Posts.find({title: searchTerm}).then((results) => {
+        if(results){
+            return res.json(results);
+        }else{
+            return res.json([]);
+        }
+    })
+});
+
+// Creating posts
+
+app.get("/newPost/:name/:body/:authorId/:type", (req, res) => {
+    let name = req.params.name;
+    let body = req.params.body;
+    let authorId = req.params.authorId;
+    console.log(authorId);
+    let type = req.params.type;
+
+    const newPost = new Posts({
+        title: name,
+        type: type,
+        body: body,
+        embeddings: [],
+        authorId: authorId
+    });
+
+    newPost.save().then(() => {
+        return res.json(newPost);
+    })
+});
+
+// create chat
+
+app.get("/getChats/:user", (req, res) => {
+    let userId = req.params.user;
+
+    Chat.find({userOne: userId}).then((resultsOne) => {
+        if(resultsOne.length > 0){
+            return res.json(resultsOne);
+        }else{
+            Chat.find({userTwo: userId}).then((resultsTwo) => {
+                if(resultsTwo.length > 0){
+                    return res.json(resultsTwo);
+                }else{
+                    return res.json([]);
+                }
+            });
+        }
+    });
+});
+
+app.get("/getChat/:user/:user2", (req, res) => {
+    let user1 = req.params.user;
+    let user2 = req.params.user2;
+
+    Chat.find({userOne: user1, userTwo: user2}).then((resultsOne) => {
+        Chat.find({userOne: user2, userTwo: user1}).then((resultsTwo) => {
+            if(resultsOne && resultsTwo.length > 0){
+                // is in res 1
+                return resultsOne;
+            }else if(resultsTwo && resultsTwo.length > 0){
+                return resultsTwo;
+            }
+        })
+    })
+})
+
+app.get("/chatHistory/:id", (req, res) => {
+    let chatId = req.params.id;
+    Chat.find({_id: chatId}).then((result) => {
+        if(results.length > 0){
+            return results[0];
+        }else{
+            return [];
+        }
+    })
+})
+
+app.get("/sendMessage/:id/:userID/:newMessage/:lang", (req, res) => {
+    let chatID = req.params.id;
+    let newMessage = req.params.newMessage;
+    let lang = req.params.lang;
+    let userId = req.params.userID;
+
+    const chat = Chat.findById(chatID);
+
+    if(!chat){
+        return [];
+    }
+
+    Chat.find({_id: chatID}).then((results) => {
+        if(results && results.length > 0){
+            if(lang == 0){
+                chat.messages.push({
+                    user: userId,
+                    contentEnglish: newMessage,
+                    contentSpanish: ""
+                });
+                chat.save(() => {
+                    return chat;
+                })
+            }else{
+                chat.messages.push({
+                    user: userId,
+                    contentEnglish: "",
+                    contentSpanish: newMessage
+                });
+                chat.save(() => {
+                    return chat;
+                })
+            }
+        }else{
+            return [];
+        }
+    })
+})
 
 app.listen(3000);
+

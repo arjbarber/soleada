@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import Kids from './pages/Kids';
 
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -34,8 +35,8 @@ const App: React.FC = () => {
         path="/register"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />}
       />
-
-      {/* Dashboard — redirect to login if not authenticated */}
+      <Route path="/kids" element={<Kids />} />
+      {/* Dashboard */}
       <Route
         path="/dashboard"
         element={
