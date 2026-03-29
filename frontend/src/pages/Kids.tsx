@@ -9,12 +9,12 @@ import { useAuth } from "../AuthContext";
 interface ComicPanel { id: number; description: string; caption: string; imageUrl: string; }
 interface Story { id: string; title: string; english: string; moral: string; panels: ComicPanel[]; spanish: string; createdAt: string; author: string; likes: number; liked: boolean; thumbnail?: string; }
 type Tab = "home" | "write" | "settings" | "profile";
-type WriteStep = "idle" | "translating" | "generating" | "imaging" | "done";
+// type WriteStep = "idle" | "translating" | "generating" | "imaging" | "done";
 
 // ─────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
+// const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? "";
 const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY ?? "";
 const ELEVENLABS_VOICE_ID = import.meta.env.VITE_ELEVENLABS_VOICE_ID ?? "EXAVITQu4vr4xnSDxMaL";
 
