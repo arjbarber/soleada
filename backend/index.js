@@ -38,7 +38,7 @@ app.use("/account", accountRouter);
 app.use("/chat", authenticate, chatRouter);
 app.use("/post", authenticate, postRouter);
 
-
+console.log("hello")
 const port = 5000;
 
 // dev --> app.listen(port, () => console.log(`Server running on port ${port}`));

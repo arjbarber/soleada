@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
+import { auth } from "../config/firebase";
 import { useNavigate } from 'react-router-dom';
 import { signupUser } from '../api';
 import { useAuth, userTypeToBackendType } from '../AuthContext';
 import type { UserType } from '../data/mockData';
+import { signInWithCustomToken } from "firebase/auth";
+
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const [accountType, setAccountType] = useState<UserType>('adults');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [language, setLanguage] = useState<'ES' | 'EN'>(() => {
     return (localStorage.getItem('preferredLanguage') as 'ES' | 'EN') || 'EN';
@@ -40,16 +44,23 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) return;
+    if (!username || !email || !password) {
+      setError('Please fill out all fields.');
+      return;
+    }
 
     setError('');
     setLoading(true);
 
     try {
       const backendType = userTypeToBackendType(accountType);
-      const newUser = await signupUser(username, password, backendType, language === 'ES' ? 1 : 0);
-      // The signup endpoint returns the user object directly
-      setUser(newUser);
+      const { firebaseToken, backendUser } = await signupUser(email, username, password, backendType);
+
+      // Sign in with the custom token
+      await signInWithCustomToken(auth, firebaseToken);
+
+      // Store the user in your context
+      setUser(backendUser);
       navigate('/dashboard');
     } catch (err) {
       console.error('Signup error:', err);
@@ -61,6 +72,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="auth-container">
+      {/* Background gradients */}
       <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(255, 107, 53, 0.2) 0%, transparent 60%)', filter: 'blur(40px)', zIndex: 0 }} />
       <div style={{ position: 'absolute', bottom: '-15%', left: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(247, 197, 68, 0.15) 0%, transparent 60%)', filter: 'blur(50px)', zIndex: 0 }} />
 
@@ -79,7 +91,7 @@ const Register: React.FC = () => {
         </div>
 
         <form className="auth-form delay-1" onSubmit={handleSubmit}>
-          
+          {/* Account Type Selector */}
           <div className="input-group">
             <label>{t.roleLabel}</label>
             <div className="account-type-selector">
@@ -118,6 +130,21 @@ const Register: React.FC = () => {
             </div>
           </div>
 
+          {/* Email Input */}
+          <div className="input-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              className="auth-input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Username Input */}
           <div className="input-group">
             <label htmlFor="username">{t.usernameLabel}</label>
             <input 
@@ -131,6 +158,7 @@ const Register: React.FC = () => {
             />
           </div>
 
+          {/* Password Input */}
           <div className="input-group">
             <label htmlFor="password">{t.passwordLabel}</label>
             <input 
@@ -144,6 +172,7 @@ const Register: React.FC = () => {
             />
           </div>
 
+          {/* Error message */}
           {error && (
             <div className="auth-error" style={{
               color: '#ef4444',
@@ -157,9 +186,9 @@ const Register: React.FC = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
-            className="btn-primary" 
+          <button
+            type="submit"
+            className="btn-primary"
             style={{ marginTop: '0.5rem', width: '100%' }}
             disabled={loading}
           >
@@ -179,3 +208,4 @@ const Register: React.FC = () => {
 };
 
 export default Register;
+

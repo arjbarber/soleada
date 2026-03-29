@@ -1,18 +1,13 @@
-import datetime
-import math
 import hdbscan
 import numpy as np
 from typing import List
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 import asyncio
 import faiss
 import time
 
 import numpy as np
-import math
 from typing import List
-from scipy.spatial.distance import pdist, squareform
 import hdbscan
 import time
 
@@ -24,7 +19,7 @@ import numpy as np
 # limits heavy ml jobs to 1 
 mlSemaphore = asyncio.Semaphore(1)
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 # angle similarity between two points
 def cosine_similarity(a, b):
@@ -218,9 +213,6 @@ async def profile(req: PostPosts):
 
 @app.get("/health")
 async def health():
-    if (reducer3 is None or reducer5 is None):
-        print("Failed Health Check!")
-        return {"status": "loading"}, 503
     print("ML is locked and loaded!")
     print("Server is running on port 8000")
     return {"status": "ok"}, 200

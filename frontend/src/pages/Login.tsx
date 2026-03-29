@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../api';
 import { useAuth } from '../AuthContext';
+import type { UserType } from '../data/mockData';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
