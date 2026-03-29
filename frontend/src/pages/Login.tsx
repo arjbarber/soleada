@@ -37,7 +37,11 @@ const Login: React.FC = () => {
       const data = await loginUser(username, password);
       if (data.success && data.result) {
         setUser(data.result);
-        navigate('/dashboard');
+        if (data.result.type === 0) {
+          navigate('/kids');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(t.invalidError);
       }

@@ -50,7 +50,11 @@ const Register: React.FC = () => {
       const newUser = await signupUser(username, password, backendType, language === 'ES' ? 1 : 0);
       // The signup endpoint returns the user object directly
       setUser(newUser);
-      navigate('/dashboard');
+      if (newUser.type === 0) {
+        navigate('/kids');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       console.error('Signup error:', err);
       setError(t.error);

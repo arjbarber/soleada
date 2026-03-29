@@ -1,5 +1,6 @@
 import { useState, type JSX } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -105,6 +106,13 @@ body { background: var(--bg); color: var(--dark); font-family: 'Nunito', sans-se
 .k-tab:hover { background: var(--lav-light); color: var(--dark); }
 .k-tab.active { background: var(--dark); color: #fff; }
 .k-tab svg { width: 15px; height: 15px; flex-shrink: 0; }
+.logout-btn {
+  background: var(--pink-light); color: var(--dark); border: 2px solid var(--pink-mid);
+  border-radius: 99px; padding: 8px 18px;
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 800;
+  cursor: pointer; transition: all .15s; margin-left: 10px;
+}
+.logout-btn:hover { background: var(--pink-mid); transform: scale(1.05); }
 
 /* HERO BANNER — smooth blended ombre */
 .hero-banner {
@@ -866,9 +874,15 @@ function ProfileTab({ stories }: { stories: Story[] }) {
 // ─────────────────────────────────────────────
 export default function Kids() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [tab, setTab] = useState<Tab>("home");
   const [stories, setStories] = useState<Story[]>(MOCK_STORIES);
   const [viewing, setViewing] = useState<Story | null>(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   function switchTab(t: Tab) { setTab(t); setViewing(null); }
 
@@ -894,6 +908,7 @@ export default function Kids() {
               </button>
             ))}
           </div>
+          <button className="logout-btn" onClick={handleLogout}>Log Out</button>
         </nav>
 
         {/* Home renders its own hero + content wrapper */}
