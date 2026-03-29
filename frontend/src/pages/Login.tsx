@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../api';
-import { useAuth, backendTypeToUserType } from '../AuthContext';
-import type { UserType } from '../data/mockData';
+import { useAuth } from '../AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
-  const [accountType, setAccountType] = useState<UserType>('adults');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [language, setLanguage] = useState<'ES' | 'EN'>('EN');
+  const [language] = useState<'ES' | 'EN'>(() => (localStorage.getItem('preferredLanguage') as 'ES' | 'EN') || 'EN');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const t = {
+    welcome: language === 'ES' ? 'Bienvenido' : 'Welcome Back',
+    subtitle: language === 'ES' ? 'Inicia sesión en tu cuenta Soleada' : 'Login to your Soleada account',
+    usernameLabel: language === 'ES' ? 'Usuario' : 'Username',
+    usernamePlaceholder: language === 'ES' ? 'Tu usuario' : 'Your username',
+    passwordLabel: language === 'ES' ? 'Contraseña' : 'Password',
+    loginBtn: language === 'ES' ? 'Iniciar Sesión' : 'Log In',
+    loggingInBtn: language === 'ES' ? 'Iniciando sesión…' : 'Logging in…',
+    invalidError: language === 'ES' ? 'Usuario o contraseña inválidos.' : 'Invalid username or password.',
+    connectError: language === 'ES' ? 'No se pudo conectar al servidor. Inténtalo de nuevo.' : 'Could not connect to server. Please try again.',
+    noAccount: language === 'ES' ? '¿No tienes una cuenta?' : "Don't have an account?",
+    createOne: language === 'ES' ? 'Crea una' : 'Create one',
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,15 +35,19 @@ const Login: React.FC = () => {
 
     try {
       const data = await loginUser(username, password);
-      if (data.success && data.result && data.result.length > 0) {
-        setUser(data.result[0]);
-        navigate('/dashboard');
+      if (data.success && data.result) {
+        setUser(data.result);
+        if (data.result.type === 0) {
+          navigate('/kids');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
-        setError('Invalid username or password.');
+        setError(t.invalidError);
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Could not connect to server. Please try again.');
+      setError(t.connectError);
     } finally {
       setLoading(false);
     }
@@ -44,66 +60,21 @@ const Login: React.FC = () => {
       <div style={{ position: 'absolute', bottom: '-15%', left: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(247, 197, 68, 0.15) 0%, transparent 60%)', filter: 'blur(50px)', zIndex: 0 }} />
 
       <div className="auth-card animate-in" style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', top: '1.25rem', right: '1.5rem', zIndex: 10 }}>
-          <div className="language-toggle" style={{ background: 'rgba(255,255,255,0.8)' }}>
-            <span className={language === 'ES' ? 'active' : ''} onClick={() => setLanguage('ES')}>ES</span>
-            {' | '}
-            <span className={language === 'EN' ? 'active' : ''} onClick={() => setLanguage('EN')}>EN</span>
-          </div>
-        </div>
 
         <div className="auth-header">
-          <h1 className="gradient-text">Welcome Back</h1>
-          <p>Login to your Soleada account</p>
+          <h1 className="gradient-text">{t.welcome}</h1>
+          <p>{t.subtitle}</p>
         </div>
 
         <form className="auth-form delay-1" onSubmit={handleSubmit}>
           
           <div className="input-group">
-            <label>Login as:</label>
-            <div className="account-type-selector">
-              <div 
-                className={`type-card ${accountType === 'kids' ? 'selected' : ''}`}
-                onClick={() => setAccountType('kids')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                  <line x1="9" y1="9" x2="9.01" y2="9" />
-                  <line x1="15" y1="9" x2="15.01" y2="9" />
-                </svg>
-                <span>Kid</span>
-              </div>
-              <div 
-                className={`type-card ${accountType === 'adults' ? 'selected' : ''}`}
-                onClick={() => setAccountType('adults')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span>Teen / Adult</span>
-              </div>
-              <div 
-                className={`type-card ${accountType === 'founder' ? 'selected' : ''}`}
-                onClick={() => setAccountType('founder')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                </svg>
-                <span>Founder</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">{t.usernameLabel}</label>
             <input 
               type="text" 
               id="username" 
               className="auth-input" 
-              placeholder="Your username"
+              placeholder={t.usernamePlaceholder}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -111,7 +82,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="input-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t.passwordLabel}</label>
             <input 
               type="password" 
               id="password" 
@@ -142,14 +113,14 @@ const Login: React.FC = () => {
             style={{ marginTop: '0.5rem', width: '100%' }}
             disabled={loading}
           >
-            {loading ? 'Logging in…' : 'Log In'}
+            {loading ? t.loggingInBtn : t.loginBtn}
           </button>
         </form>
 
         <div className="auth-footer delay-2">
-          <span>Don't have an account?</span>
+          <span>{t.noAccount}</span>
           <button type="button" className="auth-link" onClick={() => navigate('/register')}>
-            Create one
+            {t.createOne}
           </button>
         </div>
       </div>
