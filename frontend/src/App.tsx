@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import PostFeed from "./pages/PostFeed";
+import { BusinessApp } from "./components/BusinessApp";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<UserDashboard />} />
       <Route path="/feed" element={<PostFeed />} />
+      <Route path="/founder" element={<BusinessApp />} />
     </Routes>
   );
 }
