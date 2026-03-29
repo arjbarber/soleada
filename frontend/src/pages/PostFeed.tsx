@@ -4,7 +4,7 @@ import PostCard from '../components/PostCard';
 import type { DisplayPost } from '../components/PostCard';
 import { useAuth } from '../AuthContext';
 import { getAllPosts, getUserById, createChatAPI, getChat, type BackendPost } from '../api';
-import { mockPosts, type Post } from '../data/mockData';
+// import { mockPosts, type Post } from '../data/mockData';
 import { BusinessApp } from '../components/BusinessApp'
 
 interface PostFeedProps {
