@@ -28,16 +28,18 @@ def cosine_similarity(a, b):
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 class Post(BaseModel):
+    id: str
     text: str
+    embedding: List[float] | None = None
 
-class Posts(BaseModel):
-    posts: List[Post]
-    takenLabels: List[int]
-    badLabels: List[int]
+# class Posts(BaseModel):
+#     posts: List[Post]
+#     takenLabels: List[int]
+#     badLabels: List[int]
 
 class PostPosts(BaseModel):
     userPosts: List[Post]
-    otherPosts: List[int]
+    otherPosts: List[Post]
 
 @app.post("/embed")
 async def embed(req: Post):
@@ -55,158 +57,190 @@ async def embed(req: Post):
         "embedding" : embedding.tolist(),
     }
 
-@app.post("/cluster")
-async def cluster(req: Posts):
-    weighStart = time.time()
-    async with mlSemaphore:
-        semaStart = time.time()
-        # scans embeddings
-        X = np.array([p.embedding for p in req.posts], dtype=np.float32)
-        # normalizes REMEMBER TO REMOVE
-        # X = X / np.linalg.norm(X, axis=1, keepdims=True)
-        if(len(X) < 2):
-            labels = [-1] * len(X)
-        else:
-            clusterer = hdbscan.HDBSCAN(
-                min_cluster_size = 2,
-                metric = 'euclidean'
-                )
-            labels = clusterer.fit_predict(X).tolist()
-        semaEnd = time.time()
-        print(f"{req.minCluster} scan took {semaEnd - semaStart:.3f} seconds!")
-    # print("labels")
-    # print(labels)
-    # print("taken")
-    # print(req.takenLabels)
-    # print("bad")
-    # print(req.badLabels)
+# @app.post("/cluster")
+# async def cluster(req: Posts):
+#     weighStart = time.time()
+#     async with mlSemaphore:
+#         semaStart = time.time()
+#         # scans embeddings
+#         X = np.array([p.embedding for p in req.posts], dtype=np.float32)
+#         # normalizes REMEMBER TO REMOVE
+#         # X = X / np.linalg.norm(X, axis=1, keepdims=True)
+#         if(len(X) < 2):
+#             labels = [-1] * len(X)
+#         else:
+#             clusterer = hdbscan.HDBSCAN(
+#                 min_cluster_size = 2,
+#                 metric = 'euclidean'
+#                 )
+#             labels = clusterer.fit_predict(X).tolist()
+#         semaEnd = time.time()
+#         print(f"{req.minCluster} scan took {semaEnd - semaStart:.3f} seconds!")
+#     # print("labels")
+#     # print(labels)
+#     # print("taken")
+#     # print(req.takenLabels)
+#     # print("bad")
+#     # print(req.badLabels)
 
-    # actively assumes that each badLabel will be in takenLabel
-    # not a problem as it they are both edited in the same single sequence, safegaurded
-    # removes the inactive labels
+#     # actively assumes that each badLabel will be in takenLabel
+#     # not a problem as it they are both edited in the same single sequence, safegaurded
+#     # removes the inactive labels
 
-    takenLabels = [label for label in req.takenLabels if label not in req.badLabels]
+#     takenLabels = [label for label in req.takenLabels if label not in req.badLabels]
     
-    # print("newTaken")
-    # print(req.takenLabels)
-    # remaps labels to global unique labels
-    taken, labelMap = getGlobalLabels(takenLabels, labels)
-    # print("globalTaken")
-    # print(taken)
-    # print("labelMap")
-    # print(labelMap)
+#     # print("newTaken")
+#     # print(req.takenLabels)
+#     # remaps labels to global unique labels
+#     taken, labelMap = getGlobalLabels(takenLabels, labels)
+#     # print("globalTaken")
+#     # print(taken)
+#     # print("labelMap")
+#     # print(labelMap)
 
-    # print("PRE PRE PRE PRE")
-    # for post in req.posts:
-    #     print(msg.label)
+#     # print("PRE PRE PRE PRE")
+#     # for post in req.posts:
+#     #     print(msg.label)
     
-    # aggregates clusters and applies global labels
-    globalLabels = applyGlobalLabels(labels, labelMap, req.messages, req.scope)
-    # print("globalLabels")
-    # print(globalLabels)
+#     # aggregates clusters and applies global labels
+#     globalLabels = applyGlobalLabels(labels, labelMap, req.messages, req.scope)
+#     # print("globalLabels")
+#     # print(globalLabels)
 
 
-    # print("POST POST POST POST ")
-    # for post in req.posts:
-    #     print(post.label)
+#     # print("POST POST POST POST ")
+#     # for post in req.posts:
+#     #     print(post.label)
 
 
-    # returns proper json
-    weighEnd = time.time()
-    print(f" production took {weighEnd - weighStart:.3f} seconds!")
+#     # returns proper json
+#     weighEnd = time.time()
+#     print(f" production took {weighEnd - weighStart:.3f} seconds!")
 
-    return {
-        "globalLabels": globalLabels,
-        "takenLabels": list(taken)
-    }
+#     return {
+#         "globalLabels": globalLabels,
+#         "takenLabels": list(taken)
+#     }
 
-def getGlobalLabels(takenLabels, newLabels):
-    # remaps labels to global unique labels
-    taken = set(takenLabels) if takenLabels else set()
-    labelMap = {-1: -1}
-    nextLabel = 0
-    for label in set(newLabels):
-        if label == -1:
-            continue
-        while nextLabel in taken:
-            nextLabel += 1
-        labelMap[label] = nextLabel
-        taken.add(nextLabel)
-    return taken, labelMap
+# def getGlobalLabels(takenLabels, newLabels):
+#     # remaps labels to global unique labels
+#     taken = set(takenLabels) if takenLabels else set()
+#     labelMap = {-1: -1}
+#     nextLabel = 0
+#     for label in set(newLabels):
+#         if label == -1:
+#             continue
+#         while nextLabel in taken:
+#             nextLabel += 1
+#         labelMap[label] = nextLabel
+#         taken.add(nextLabel)
+#     return taken, labelMap
 
-def applyGlobalLabels(labels, labelMap, posts : List[Post]):
+# def applyGlobalLabels(labels, labelMap, posts : List[Post]):
 
-    # aggregates clusters and saves global labels
-    globalLabels = []
-    for i, post in enumerate(posts):
-        currentLabel = labels[i]
-        globalLabels.append(labelMap[currentLabel])  
-        post.label = labelMap[currentLabel]
+#     # aggregates clusters and saves global labels
+#     globalLabels = []
+#     for i, post in enumerate(posts):
+#         currentLabel = labels[i]
+#         globalLabels.append(labelMap[currentLabel])  
+#         post.label = labelMap[currentLabel]
 
-    return globalLabels
+#     return globalLabels
 
-@app.post("/profile")
-async def profile(req: PostPosts):
+@app.post("/recommend")
+async def recommend(req: PostPosts):
+    # async with mlSemaphore:
+    #     # WARNING WARNING WARNING, ALL THIS RELIES ON UNMUTATED INDEX
+    #     # DO NOT CHANGE INDEX IN PROCESS OR INIT DICTS INSTEAD OF ARRAYS
+    #     # normalizes the centroids of the clusters set for comparison
+    #     compareEmbeddings = np.array([p.embedding for p in req.otherPosts], dtype=np.float32)
+    #     faiss.normalize_L2(compareEmbeddings)
+
+    #     index = faiss.IndexFlatIP(384)
+    #     index.add(compareEmbeddings)
+
+    #     # compares then aggregates each embedding comparison from the user
+    #     user = np.array([p.embedding for p in req.userPosts], dtype='float32')
+    #     faiss.normalize_L2(user)
+    #     D, I = index.search(user, k=2)
+    
+    # userWeights = np.array([c.weight for c in req.user], dtype='float32')
+    
+    # compareWeightsScoped = np.array([req.compare[i].weight for i in I.ravel()], dtype='float32')
+    # compareWeightsMatrix = compareWeightsScoped.reshape(D.shape)
+
+    # DWeighted = D * userWeights[:, None] * compareWeightsMatrix
+
+    # idMap = {i: c.ownerID for i,c in enumerate(req.compare)}
+    # ids = np.vectorize(idMap.get)(I)
+
+    # uniqueIds = np.unique(ids)
+    # uidMap = {uid: i for i, uid in enumerate(uniqueIds)}
+    # uids = np.vectorize(uidMap.get)(ids)
+
+    # scores = np.zeros(uids.max()+1, dtype=np.float32)
+    # np.add.at(scores, uids.ravel(), DWeighted.ravel())
+
+    # # get indices of top 10 scores (descending)
+    # topK = 10
+    # topIndices = np.argsort(scores)[::-1][:topK]
+    
+    # topMatches = [
+    #     {
+    #         "postID": uniqueIds[i],
+    #         "score": float(scores[i])  # convert from numpy type
+    #     }
+    #     for i in topIndices
+    # ]  
+
+    # return {
+    #     "topMatches" : topMatches
+    # }
+
     async with mlSemaphore:
-        # WARNING WARNING WARNING, ALL THIS RELIES ON UNMUTATED INDEX
-        # DO NOT CHANGE INDEX IN PROCESS OR INIT DICTS INSTEAD OF ARRAYS
-        # normalizes the centroids of the clusters set for comparison
-        compareCentroids = np.array([c.centroid for c in req.otherPosts], dtype=np.float32)
-        faiss.normalize_L2(compareCentroids)
-
-        # maps strings ids to ints
-        # this method is likely inefficient am tired will fix later 
-        # it works tho
-
-        # use if mutating index, it returns vectors as given so no need right now
-        # compareIDs = [c.id for c in req.compare]
-        # str2int = {s: i for i, s in enumerate(compareIDs)}
-        # int2str = {i: s for s, i in str2int.items()}
-        # ids = np.array([str2int[s] for s in compareIDs], dtype=np.int64)
-        # inits index and adds normalized centroids for later comparison
-        # index = faiss.IndexFlatIP(DIMENSIONS)
-        # index = faiss.IndexIDMap(index)
-        # index.add_with_ids(compareCentroids, ids)
+        # Build comparison embeddings
+        compareEmbeddings = np.array([p.embedding for p in req.otherPosts], dtype=np.float32)
+        faiss.normalize_L2(compareEmbeddings)
 
         index = faiss.IndexFlatIP(384)
-        index.add(compareCentroids)
+        index.add(compareEmbeddings)
 
-        # compares then aggregates each centroid comparison from the user
-        user = np.array([c.centroid for c in req.userPosts], dtype='float32')
+        # User embeddings
+        user = np.array([p.embedding for p in req.userPosts], dtype='float32')
         faiss.normalize_L2(user)
+
+        # Search
         D, I = index.search(user, k=2)
-    
-    userWeights = np.array([c.weight for c in req.user], dtype='float32')
-    
-    compareWeightsScoped = np.array([req.compare[i].weight for i in I.ravel()], dtype='float32')
-    compareWeightsMatrix = compareWeightsScoped.reshape(D.shape)
 
-    DWeighted = D * userWeights[:, None] * compareWeightsMatrix
+    # --- NO WEIGHTS ---
 
-    idMap = {i: c.ownerID for i,c in enumerate(req.compare)}
+    # Map indices → post IDs
+    idMap = {i: p.id for i, p in enumerate(req.otherPosts)}
     ids = np.vectorize(idMap.get)(I)
 
+    # Unique users
     uniqueIds = np.unique(ids)
     uidMap = {uid: i for i, uid in enumerate(uniqueIds)}
     uids = np.vectorize(uidMap.get)(ids)
 
-    scores = np.zeros(uids.max()+1, dtype=np.float32)
-    np.add.at(scores, uids.ravel(), DWeighted.ravel())
+    # Aggregate raw similarity scores
+    scores = np.zeros(uids.max() + 1, dtype=np.float32)
+    np.add.at(scores, uids.ravel(), D.ravel())
 
-    # get indices of top 10 scores (descending)
+    # Top K
     topK = 10
     topIndices = np.argsort(scores)[::-1][:topK]
-    
+
     topMatches = [
         {
             "postID": uniqueIds[i],
-            "score": float(scores[i])  # convert from numpy type
+            "score": float(scores[i])
         }
         for i in topIndices
-    ]  
+    ]
 
     return {
-        "topMatches" : topMatches
+        "topMatches": topMatches
     }
 
 # for health checks and making sure the reducer is properly loaded on server starts
