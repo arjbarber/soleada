@@ -58,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserState(u);
     if (u) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+      if (u.primaryLang !== undefined) {
+        localStorage.setItem('preferredLanguage', u.primaryLang === 1 ? 'ES' : 'EN');
+      }
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }

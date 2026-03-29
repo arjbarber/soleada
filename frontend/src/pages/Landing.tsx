@@ -16,29 +16,57 @@ const SunIcon = () => (
 );
 
 const Landing: React.FC = () => {
+  const [lang, setLang] = React.useState<'ES' | 'EN'>(() => {
+    return (localStorage.getItem('preferredLanguage') as 'ES' | 'EN') || 'EN';
+  });
+
+  const handleLang = (newLang: 'ES' | 'EN') => {
+    setLang(newLang);
+    localStorage.setItem('preferredLanguage', newLang);
+  };
+
+  const t = {
+    tagline: lang === 'ES' ? 'APRENDE · CREA · CONSTRUYE' : 'LEARN · CREATE · BUILD',
+    where: lang === 'ES' ? 'Donde ' : 'Where ',
+    stories: lang === 'ES' ? 'historias' : 'stories',
+    become: lang === 'ES' ? ' se convierten' : ' become ',
+    br: lang === 'ES' ? 'en habilidades e ideas en ' : 'skills & ideas become ',
+    businesses: lang === 'ES' ? 'negocios' : 'businesses',
+    subtitle: lang === 'ES' ? 'Una plataforma refinada diseñada para la nueva generación de mentes creativas y fundadores.' : 'A refined platform designed for the next generation of creative minds and founders.',
+    login: lang === 'ES' ? 'iniciar sesión' : 'log in',
+    loginDesc: lang === 'ES' ? 'Continúa tu viaje y accede a tus emprendimientos.' : 'Continue your journey and access your ventures.',
+    create: lang === 'ES' ? 'crear cuenta' : 'create account',
+    createDesc: lang === 'ES' ? 'Únete a la comunidad y comienza a construir tu futuro.' : 'Join the community and start building your future.'
+  };
+
   return (
     <div className="landing-page">
       {/* NAVBAR */}
-      <nav className="landing-navbar animate-in">
+      <nav className="landing-navbar animate-in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="landing-logo">
           <div className="landing-logo-icon">
             <SunIcon />
           </div>
           <span className="landing-logo-text">soleada</span>
         </div>
+        <div className="language-toggle" style={{ background: 'rgba(255,255,255,0.8)' }}>
+          <span className={lang === 'ES' ? 'active' : ''} onClick={() => handleLang('ES')}>ES</span>
+          {' | '}
+          <span className={lang === 'EN' ? 'active' : ''} onClick={() => handleLang('EN')}>EN</span>
+        </div>
       </nav>
 
       {/* HERO */}
       <div className="landing-hero">
-        <p className="landing-tagline animate-in delay-1">LEARN · CREATE · BUILD</p>
+        <p className="landing-tagline animate-in delay-1">{t.tagline}</p>
 
         <h1 className="landing-headline animate-in delay-1">
-          Where <span className="accent">stories</span> become <br />
-          skills & ideas become <span className="italic">businesses</span>
+          {t.where}<span className="accent">{t.stories}</span>{t.become}<br />
+          {t.br}<span className="italic">{t.businesses}</span>
         </h1>
 
         <p className="landing-subtitle animate-in delay-2">
-          A refined platform designed for the next generation of creative minds and founders.
+          {t.subtitle}
         </p>
       </div>
 
@@ -46,14 +74,14 @@ const Landing: React.FC = () => {
       <div className="landing-cards">
         <Link to="/login" className="landing-card animate-in delay-2">
           <div className="landing-card-icon">→</div>
-          <h2 className="landing-card-title">log in</h2>
-          <p className="landing-card-desc">Continue your journey and access your ventures.</p>
+          <h2 className="landing-card-title">{t.login}</h2>
+          <p className="landing-card-desc">{t.loginDesc}</p>
         </Link>
 
         <Link to="/register" className="landing-card animate-in delay-3">
           <div className="landing-card-icon">+</div>
-          <h2 className="landing-card-title">create account</h2>
-          <p className="landing-card-desc">Join the community and start building your future.</p>
+          <h2 className="landing-card-title">{t.create}</h2>
+          <p className="landing-card-desc">{t.createDesc}</p>
         </Link>
       </div>
     </div>

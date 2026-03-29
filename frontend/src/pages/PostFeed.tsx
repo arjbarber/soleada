@@ -1,30 +1,107 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PostCard from '../components/PostCard';
-import { mockPosts, type Post } from '../data/mockData';
+import type { DisplayPost } from '../components/PostCard';
+import { useAuth } from '../AuthContext';
+import { getAllPosts, getUserById, createChatAPI, getChat, type BackendPost } from '../api';
 
 interface PostFeedProps {
   activeTab: string;
 }
 
-const PostFeed: React.FC<PostFeedProps> = ({ activeTab }) => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
+/** Convert backend post type number to a category label */
+function postTypeToCategory(type: number): string {
+  switch (type) {
+    case 0: return 'lifestory';
+    case 1: return 'founder';
+    case 2: return 'corporate';
+    default: return 'lifestory';
+  }
+}
 
-  useEffect(() => {
-    // Simulate fetching data from backend
+/** Normalize backend post to display format */
+function toDisplayPost(bp: BackendPost, authorName: string): DisplayPost {
+  return {
+    id: bp._id,
+    category: postTypeToCategory(bp.type) as 'lifestory' | 'founder' | 'corporate',
+    content: bp.body,
+    tags: bp.genre ?? [],
+    attributes: [],
+    timestamp: 'Recently',
+    title: bp.title,
+    authorName,
+    authorId: bp.authorId,
+  };
+}
+
+const PostFeed: React.FC<PostFeedProps> = ({ activeTab }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<DisplayPost[]>([]);
+  const [loading, setLoading] = useState(false);
+  const usernameCacheRef = useRef<Record<string, string>>({});
+
+  const fetchPosts = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
-    setPosts([]); // clear immediately for animation re-trigger
-    
-    setTimeout(() => {
+    setPosts([]);
+    try {
+      const raw = await getAllPosts();
+
+      // Pre-populate cache with current user
+      usernameCacheRef.current[user._id] = user.username;
+
+      // Resolve unknown author names
+      const unknownIds = [...new Set(raw.map(p => p.authorId))]
+        .filter(id => !usernameCacheRef.current[id]);
+      const lookups = await Promise.allSettled(
+        unknownIds.map(id => getUserById(id))
+      );
+      lookups.forEach((result, i) => {
+        if (result.status === 'fulfilled' && result.value) {
+          usernameCacheRef.current[unknownIds[i]] = result.value.username;
+        }
+      });
+
+      const all = raw.map(bp => toDisplayPost(
+        bp,
+        usernameCacheRef.current[bp.authorId] || 'Unknown User'
+      ));
       if (activeTab === 'supporter') {
         setPosts([]);
       } else {
-        const filtered = mockPosts.filter((p) => p.category === activeTab);
+        const filtered = all.filter(p => p.category === activeTab);
         setPosts(filtered);
       }
+    } catch (err) {
+      console.error('Failed to fetch posts:', err);
+    } finally {
       setLoading(false);
-    }, 400); // 400ms fake network delay
-  }, [activeTab]);
+    }
+  }, [user, activeTab]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  const handleConnect = async (post: DisplayPost) => {
+    if (!user || !post.authorId) return;
+    if (post.authorId === user._id) {
+      // Navigate to dashboard to see own chat
+      navigate('/dashboard');
+      return;
+    }
+    // Try to create or find a chat then navigate to dashboard
+    try {
+      const found = await getChat(user._id, post.authorId);
+      if (!found) {
+        await createChatAPI(user._id, post.authorId);
+      }
+    } catch {
+      // ignore
+    }
+    navigate('/dashboard');
+  };
 
   let title = 'LifeStory Pools';
   let subtitle = 'Connect with others who share similar life experiences and find relatability.';
@@ -50,7 +127,7 @@ const PostFeed: React.FC<PostFeedProps> = ({ activeTab }) => {
         <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ display: 'inline-block', width: '24px', height: '24px', border: '3px solid rgba(255,107,53,0.3)', borderTopColor: 'var(--nika-orange)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-          <p style={{ marginTop: '1rem' }}>Matching profiles using Gemini...</p>
+          <p style={{ marginTop: '1rem' }}>Loading posts...</p>
         </div>
       ) : activeTab === 'supporter' ? (
         <div style={{ padding: '2rem' }}>
@@ -64,10 +141,15 @@ const PostFeed: React.FC<PostFeedProps> = ({ activeTab }) => {
       ) : (
         <div className="post-grid">
           {posts.map((post, idx) => (
-            <PostCard key={post.id} post={post} delayIndex={idx} />
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              delayIndex={idx}
+              onConnect={(p) => handleConnect(p as DisplayPost)}
+            />
           ))}
           {posts.length === 0 && (
-            <p style={{ color: 'var(--text-muted)' }}>No anonymized posts found for this pool.</p>
+            <p style={{ color: 'var(--text-muted)' }}>No posts found for this pool. Create one from the dashboard!</p>
           )}
         </div>
       )}

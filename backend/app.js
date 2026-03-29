@@ -12,6 +12,19 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URL)
   .then(() => console.log("MongoDB connected"));
 
+async function translateText(text, targetLang) {
+  if (!text) return "";
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data[0].map(item => item[0]).join('');
+  } catch (error) {
+    console.error("Translation error:", error);
+    return text;
+  }
+}
+
 // schema setup
 const userSchema = new mongoose.Schema({
     username: String,
@@ -24,6 +37,7 @@ const postSchema = new mongoose.Schema({
     title: String,
     type: Number,
     body: String,
+    bodySpanish: String,
     embeddings: [Number],
     authorId: String,
     genre: [String]
@@ -68,16 +82,17 @@ app.get("/login/:username/:pass", async (req, res) => {
     })
 });
 
-
-app.get("/signup/:username/:pass/:type", (req, res) => {
-    let usernameGiven = req.params.username;//req.body.username;
-    let passwordGiven = req.params.pass;//req.body.password;
-    let userType = req.params.type;//body.userType;
+app.get("/signup/:username/:pass/:type/:lang", (req, res) => {
+    let usernameGiven = req.params.username;
+    let passwordGiven = req.params.pass;
+    let userType = req.params.type;
+    let lang = parseInt(req.params.lang) || 0;
 
     let newUser = new Users({
         username: usernameGiven,
         password: passwordGiven, 
-        type: userType
+        type: userType,
+        primaryLang: lang
     });
     newUser.save().then(() => {
         return res.json(newUser);
@@ -85,6 +100,22 @@ app.get("/signup/:username/:pass/:type", (req, res) => {
 })
 
 // Getting Posts
+
+app.get("/allPosts", (req, res) => {
+    Posts.find({}).then((results) => {
+        return res.json(results || []);
+    });
+});
+
+app.get("/userById/:id", (req, res) => {
+    Users.findById(req.params.id).then((user) => {
+        if(user){
+            return res.json({ _id: user._id, username: user.username, type: user.type });
+        }else{
+            return res.json(null);
+        }
+    });
+});
 
 app.get("/postByAuthorId/:id", (req, res) => {
     let id = req.params.id;
@@ -108,17 +139,37 @@ app.get("/postByName/:search/:uType", (req, res) => {
 
 // Creating posts
 
-app.get("/newPost/:name/:body/:authorId/:type", (req, res) => {
+app.get("/newPost/:name/:body/:authorId/:type", async (req, res) => {
     let name = req.params.name;
     let body = req.params.body;
     let authorId = req.params.authorId;
     console.log(authorId);
     let type = req.params.type;
 
+    let lang = 0;
+    try {
+        const author = await Users.findById(authorId);
+        if (author && author.primaryLang === 1) lang = 1;
+    } catch(err) {
+        console.error("Error finding author:", err);
+    }
+
+    let bodySpanish = "";
+    let bodyEnglish = "";
+
+    if (lang === 0) {
+        bodyEnglish = body;
+        bodySpanish = await translateText(body, 'es');
+    } else {
+        bodySpanish = body;
+        bodyEnglish = await translateText(body, 'en');
+    }
+
     const newPost = new Posts({
         title: name,
         type: type,
-        body: body,
+        body: bodyEnglish,
+        bodySpanish: bodySpanish,
         embeddings: [],
         authorId: authorId
     });
@@ -128,88 +179,100 @@ app.get("/newPost/:name/:body/:authorId/:type", (req, res) => {
     })
 });
 
-// create chat
+// get chats
+
+app.get("/createChat/:user1/:user2", (req, res) => {
+    let user1 = req.params.user1;
+    let user2 = req.params.user2;
+
+    let chat = new Chat({
+        userOne: user1,
+        userTwo: user2,
+        messages: []
+    });
+
+    chat.save().then(() => {
+        return res.json(chat);
+    });
+
+})
 
 app.get("/getChats/:user", (req, res) => {
     let userId = req.params.user;
 
-    Chat.find({userOne: userId}).then((resultsOne) => {
-        if(resultsOne.length > 0){
-            return res.json(resultsOne);
-        }else{
-            Chat.find({userTwo: userId}).then((resultsTwo) => {
-                if(resultsTwo.length > 0){
-                    return res.json(resultsTwo);
-                }else{
-                    return res.json([]);
-                }
-            });
-        }
+    Chat.find({ $or: [{ userOne: userId }, { userTwo: userId }] }).then((results) => {
+        return res.json(results || []);
     });
 });
 
-app.get("/getChat/:user/:user2", (req, res) => {
+app.get("/getChat/:user/:userTwo", (req, res) => {
     let user1 = req.params.user;
-    let user2 = req.params.user2;
+    let user2 = req.params.userTwo;
 
     Chat.find({userOne: user1, userTwo: user2}).then((resultsOne) => {
-        Chat.find({userOne: user2, userTwo: user1}).then((resultsTwo) => {
-            if(resultsOne && resultsTwo.length > 0){
-                // is in res 1
-                return resultsOne;
-            }else if(resultsTwo && resultsTwo.length > 0){
-                return resultsTwo;
+        if(resultsOne && resultsOne.length > 0){
+            return res.json(resultsOne[0]);
+        }else{
+            Chat.find({userOne: user2, userTwo: user1}).then((resultsTwo) => {
+                    if(resultsTwo && resultsTwo.length > 0){
+                        return res.json(resultsTwo[0]);
+                    } else {
+                        return res.json(null);
+                    }
+                })
             }
-        })
     })
 })
 
 app.get("/chatHistory/:id", (req, res) => {
     let chatId = req.params.id;
     Chat.find({_id: chatId}).then((result) => {
-        if(results.length > 0){
-            return results[0];
+        if(result.length > 0){
+            return res.json(result[0].messages);
         }else{
-            return [];
+            return res.json([]);
         }
     })
 })
 
-app.get("/sendMessage/:id/:userID/:newMessage/:lang", (req, res) => {
+app.get("/sendMessage/:id/:userID/:userTwo/:newMessage/:lang", (req, res) => {
     let chatID = req.params.id;
     let newMessage = req.params.newMessage;
-    let lang = req.params.lang;
+    let lang = parseInt(req.params.lang) || 0;
     let userId = req.params.userID;
+    let userIdTo = req.params.userTwo;
 
     const chat = Chat.findById(chatID);
 
     if(!chat){
-        return [];
+        res.return([]);
     }
 
-    Chat.find({_id: chatID}).then((results) => {
+    Chat.find({_id: chatID}).then(async (results) => {
         if(results && results.length > 0){
-            if(lang == 0){
-                chat.messages.push({
+            if(lang === 0){
+                let contentSpanish = await translateText(newMessage, 'es');
+                results[0].messages.push({
                     user: userId,
                     contentEnglish: newMessage,
-                    contentSpanish: ""
+                    contentSpanish: contentSpanish
                 });
-                chat.save(() => {
-                    return chat;
+                results[0].save().then(() => {
+                    return res.json(results);
                 })
             }else{
-                chat.messages.push({
+                let contentEnglish = await translateText(newMessage, 'en');
+                results[0].messages.push({
                     user: userId,
-                    contentEnglish: "",
+                    contentEnglish: contentEnglish,
                     contentSpanish: newMessage
                 });
-                chat.save(() => {
-                    return chat;
+                results[0].save().then(() => {
+                    return res.json(results);
                 })
             }
         }else{
-            return [];
+            return res.json([]);
         }
     })
 })
