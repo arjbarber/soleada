@@ -18,6 +18,16 @@ const postSchema = new mongoose.Schema({
 
 const Posts = new mongoose.model("Posts", postSchema);
 
+const recommendationSchema = new mongoose.Schema({
+    title: String,
+    type: Number,
+    body: String,
+    embeddings: [Number],
+    authorId: String
+})
+
+const Recommends = new mongoose.model("Recommends", recommendationSchema);
+
 router.get("/postByName/:search/:uType", async (req, res) => {
   try {
     const searchTerm = req.params.search;
@@ -68,6 +78,27 @@ router.get("/newPost/:name/:body/:authorId/:type", async (req, res) => {
         embedding: embedData.embedding,
         authorId: req.user.uid
     })
+
+    allUserTypePosts = await db.collection("posts").findMany({authorId: req.user.uid, type: type})
+    allOtherTypePosts = await db.collection("posts").findMany({authorId: {$ne : req.user.uid}, type: type})
+
+    const recommendResponse = await fetch("http://ml:8000/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts, clusterProfiles: userClusterProfiles })
+    });
+
+    const recommendData = await recommendResponse.json()
+
+    if (!recommendData) {
+      console.log("recommendData is falsy:", recommendData);
+    }
+
+    if (!recommendData.topMatches) {
+      console.log("topMatches is falsy:", recommendData.topMatches);
+    }
+
+
 
     return res.json(newPost);
 });
