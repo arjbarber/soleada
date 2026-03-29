@@ -1,0 +1,12 @@
+sentence-transformers
+numpy
+scipy
+scikit-learn
+joblib
+hdbscan
+faiss-cpu
+fastapi
+uvicorn
+umap-learn
+asyncio
+pandas

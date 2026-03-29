@@ -107,26 +107,74 @@ app.get("/postByName/:search/:uType", (req, res) => {
 
 // Creating posts
 
-app.get("/newPost/:name/:body/:authorId/:type", (req, res) => {
+app.get("/newPost/:name/:body/:authorId/:type", async (req, res) => {
     let name = req.params.name;
     let body = req.params.body;
     let authorId = req.params.authorId;
     console.log(authorId);
     let type = req.params.type;
 
-    const newPost = new Posts({
-        title: name,
-        type: type,
-        body: body,
-        embeddings: [],
-        authorId: authorId
+    const embedResponse = await fetch("http://ml:8000/embed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id : "embed" , text : body })
     });
 
-    newPost.save().then(() => {
-        return res.json(newPost);
-    })
-});
+    const embedData = await embedResponse.json()
 
+    if (!embedData) {
+      console.log("embedData is falsy:", embedData);
+      throw new Error("No Embedding Recieved!");
+    }
+
+    if (!embedData.embedding) {
+      console.log("embedding is falsy:", embedData.embedding);
+      throw new Error("No Embedding Recieved!");
+    }
+
+    const newPost = new Posts({
+      title: name,
+      type: type,
+      body: bodyEnglish,
+      bodySpanish: bodySpanish,
+      embeddings: embedData.embedding,
+      authorId: authorId
+    });
+
+    await newPost.save();
+
+    const updatedUserPosts = await Posts.find({ authorId, type });
+    const allOtherTypePosts = await Posts.find({authorId: {$ne : authorId}, type})
+
+    const recommendResponse = await fetch("http://ml:8000/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userPosts: updatedUserPosts.map(p => ({
+          id: p._id.toString(),
+          text: p.body,
+          embedding: p.embeddings
+        })),
+        otherPosts: allOtherTypePosts.map(p => ({
+          id: p._id.toString(),
+          text: p.body,
+          embedding: p.embeddings
+        }))
+      })
+    });
+
+    const recommendData = await recommendResponse.json()
+
+    if (!recommendData) {
+      console.log("recommendData is falsy:", recommendData);
+    }
+
+    if (!recommendData.topMatches) {
+      console.log("topMatches is falsy:", recommendData.topMatches);
+    }
+
+    return res.json(newPost);
+});
 // get chats
 
 app.get("/createChat/:user1/:user2", (req, res) => {

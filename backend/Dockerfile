@@ -1,25 +1,21 @@
-# uses python image sourced from docker
-FROM python:3.10-slim
+
+# uses node image
+FROM node:20
+
 # sets working dir
 WORKDIR /app
 
-# installs pytorch because the sentence embedder is based off it
-RUN python -m pip install --upgrade pip
+# copies packages
+COPY package*.json ./
 
-RUN apt-get update && apt-get install -y curl
-RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-# copies python dependencies from txt file
-COPY requirements.txt .
-
-# installs said dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# install dependencies
+RUN npm install
 
 # copies code
 COPY . .
 
-# exposes port for local usage, especially in tandem with exposed port in api
-EXPOSE 8000
+# exposes backend ( for local usage on server )
+EXPOSE 3000
 
-# runs python with uvicorn and reload for "instant" updates
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# runs index with nodemon for dev changing causing "instant" updates
+CMD ["npx", "nodemon", "api/app.js"]
