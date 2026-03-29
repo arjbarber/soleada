@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PostCard from '../components/PostCard';
 import { mockPosts, type Post } from '../data/mockData';
+import { BusinessApp } from '../components/BusinessApp'
 
 interface PostFeedProps {
   activeTab: string;
@@ -56,9 +57,10 @@ const PostFeed: React.FC<PostFeedProps> = ({ activeTab }) => {
         <div style={{ padding: '2rem' }}>
           <div className="glass" style={{ padding: '3rem', textAlign: 'center' }}>
             <h3 style={{ marginBottom: '1rem', color: 'var(--text-main)' }}>Your Business Homepage</h3>
-            <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
+            {/* <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
               Welcome back. All incoming orders and action items are fully resolved. You have zero critical pitfalls currently flagged by the system.
-            </p>
+            </p> */}
+            <BusinessApp></BusinessApp>
           </div>
         </div>
       ) : (

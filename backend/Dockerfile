@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5000
 
 # runs index with nodemon for dev changing causing "instant" updates
-CMD ["npx", "nodemon", "api/index.js"]
+CMD ["npx", "nodemon", "api/app.js"]

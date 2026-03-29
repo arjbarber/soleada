@@ -1,30 +1,41 @@
 import React, { useState } from 'react';
+import { auth } from "../config/firebase";
 import { useNavigate } from 'react-router-dom';
 import { signupUser } from '../api';
 import { useAuth, userTypeToBackendType } from '../AuthContext';
 import type { UserType } from '../data/mockData';
+import { signInWithCustomToken } from "firebase/auth";
+
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const [accountType, setAccountType] = useState<UserType>('adults');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) return;
+    if (!username || !email || !password) {
+      setError('Please fill out all fields.');
+      return;
+    }
 
     setError('');
     setLoading(true);
 
     try {
       const backendType = userTypeToBackendType(accountType);
-      const newUser = await signupUser(username, password, backendType);
-      // The signup endpoint returns the user object directly
-      setUser(newUser);
+      const { firebaseToken, backendUser } = await signupUser(email, username, password, backendType);
+
+      // Sign in with the custom token
+      await signInWithCustomToken(auth, firebaseToken);
+
+      // Store the user in your context
+      setUser(backendUser);
       navigate('/dashboard');
     } catch (err) {
       console.error('Signup error:', err);
@@ -36,6 +47,7 @@ const Register: React.FC = () => {
 
   return (
     <div className="auth-container">
+      {/* Background gradients */}
       <div style={{ position: 'absolute', top: '-10%', right: '-5%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(255, 107, 53, 0.2) 0%, transparent 60%)', filter: 'blur(40px)', zIndex: 0 }} />
       <div style={{ position: 'absolute', bottom: '-15%', left: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(247, 197, 68, 0.15) 0%, transparent 60%)', filter: 'blur(50px)', zIndex: 0 }} />
 
@@ -46,51 +58,44 @@ const Register: React.FC = () => {
         </div>
 
         <form className="auth-form delay-1" onSubmit={handleSubmit}>
-          
+          {/* Account Type Selector */}
           <div className="input-group">
             <label>I am joining as:</label>
             <div className="account-type-selector">
-              <div 
-                className={`type-card ${accountType === 'kids' ? 'selected' : ''}`}
-                onClick={() => setAccountType('kids')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                  <line x1="9" y1="9" x2="9.01" y2="9" />
-                  <line x1="15" y1="9" x2="15.01" y2="9" />
-                </svg>
-                <span>Kid</span>
-              </div>
-              <div 
-                className={`type-card ${accountType === 'adults' ? 'selected' : ''}`}
-                onClick={() => setAccountType('adults')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span>Teen / Adult</span>
-              </div>
-              <div 
-                className={`type-card ${accountType === 'founder' ? 'selected' : ''}`}
-                onClick={() => setAccountType('founder')}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                </svg>
-                <span>Founder</span>
-              </div>
+              {['kids', 'adults', 'founder'].map(type => (
+                <div
+                  key={type}
+                  className={`type-card ${accountType === type ? 'selected' : ''}`}
+                  onClick={() => setAccountType(type as UserType)}
+                >
+                  {/* Add your SVG icons here */}
+                  <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* Email Input */}
+          <div className="input-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              className="auth-input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Username Input */}
           <div className="input-group">
             <label htmlFor="username">Username</label>
-            <input 
-              type="text" 
-              id="username" 
-              className="auth-input" 
+            <input
+              type="text"
+              id="username"
+              className="auth-input"
               placeholder="Your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -98,12 +103,13 @@ const Register: React.FC = () => {
             />
           </div>
 
+          {/* Password Input */}
           <div className="input-group">
             <label htmlFor="password">Password</label>
-            <input 
-              type="password" 
-              id="password" 
-              className="auth-input" 
+            <input
+              type="password"
+              id="password"
+              className="auth-input"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -111,6 +117,7 @@ const Register: React.FC = () => {
             />
           </div>
 
+          {/* Error message */}
           {error && (
             <div className="auth-error" style={{
               color: '#ef4444',
@@ -124,9 +131,9 @@ const Register: React.FC = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
-            className="btn-primary" 
+          <button
+            type="submit"
+            className="btn-primary"
             style={{ marginTop: '0.5rem', width: '100%' }}
             disabled={loading}
           >
@@ -146,3 +153,4 @@ const Register: React.FC = () => {
 };
 
 export default Register;
+

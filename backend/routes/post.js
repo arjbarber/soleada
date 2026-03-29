@@ -3,6 +3,8 @@ import { db } from "../db.js";
 import { ObjectId } from "mongodb";
 import admin from "../middleware/firebaseAdmin.js"
 import { client } from "../db.js";
+import mongoose from "mongoose";
+
 
 const router = express.Router();
 

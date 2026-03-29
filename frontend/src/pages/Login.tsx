@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../api';
-import { useAuth, backendTypeToUserType } from '../AuthContext';
+import { useAuth } from '../AuthContext';
 import type { UserType } from '../data/mockData';
 
 const Login: React.FC = () => {
